@@ -2,74 +2,59 @@
 
 require "rexml/document"
 
-# IMPORTANT: If you're using Day One Classic, comment out or delete the "YES" line, and uncomment the "NO" line. 
-DAYONE2 = 'YES'
-# DAYONE2 = 'NO'
+# This assumes you're using a modern version of Day One, with the "dayone2"
+# command line app installed.
 
-
-# Function for creating a new Day One entry. Checks if the DAYONE2 constant
-# has been set; if so, writes to a different store. Uses /tmp/ and a scratch
-# file because echo can't be counted upon to deal with UTF-8 encoding.
+# Create a DayOne entry in a journal named "LiveJournal"
 def create_dayone_entry(subject, date, text)
-	if DAYONE2 == 'YES'
-		dayone_cmd = 'dayone2'		
-		dayone_cmd_options = '-t LiveJournal'
-# Uncomment this next line if you've already created a separate Day One journal named
-# "Livejournal" and you want entries added to that one instead
-#		dayone_cmd_options = '-journal=LiveJournal -t LiveJournal'
-	else
-		dayone_cmd = 'dayone'
-		dayone_cmd_options = '-j="~/Library/Group Containers/5U8NS4GX82.dayoneapp/Data/Auto Import/Default Journal.dayone" new'
-	end
-# If there's no subject, don't try to use it
-	#UGH Open scratch file
-	f = File.new("/tmp/" + `uuidgen`.strip + ".txt", "w+")
-	f.puts subject
-	f.puts text
-	f.close
-#	cat the temp file and pipe it into the day one command line utility
-	return `cat #{f.path.strip} | #{dayone_cmd} #{dayone_cmd_options} --date="#{date} EST" new`
-	rm(f)
+  dayone_cmd = 'dayone2'		
+  dayone_cmd_options = '--journal=LiveJournal'
+
+  f = File.new("/tmp/entry", "w+")
+  f.puts subject
+  f.puts text
+  f.close
+  return `cat /tmp/entry | #{dayone_cmd} #{dayone_cmd_options} --date="#{date}" new`
+  File.delete 'tmp/entry'
 end
 
 # It's very likely that we're going to be iterating over multiple files, so
 # let's try to handle that intelligently!
-(0..ARGV.length - 1).each do |j|
-	ljdata = REXML::Document.new(File.new(ARGV[j]))
+ARGV.each do |arg|
+  ljdata = REXML::Document.new(File.new(arg))
+  # puts ljdata
 
 # Extract the relevant data from the ljdata xml object
-	subjects = ljdata.elements.to_a('///subject')
-	dates = ljdata.elements.to_a('///eventtime')
-	entrytexts = ljdata.elements.to_a('///event')
+  entries = REXML::XPath.each(ljdata, "//entry").to_a
 
 # Iterate over the array; subjects[] is used to derive the index number, but
 # that's an arbitrary choice; all three arrays should be the same length
 
-	(0..subjects.length - 1).each do |i|
-		# This gets rid of <lj-cut> garbage in a semi-intelligent way;
-		# If the cut had a caption associated, we pull that out and
-		# format it nicely, otherwise use an <hr />
-		entrytexts[i].text.gsub!(/<lj-cut[[:blank:]]text="(?<cuttext>.*)">/, '<p><strong>Under the Fold: \k<cuttext></strong></p>')
-		entrytexts[i].text.gsub!(/<lj-cut>/, "<hr />")
-		entrytexts[i].text.gsub!(/<\/lj-cut>/, "\n")
-		
+  entries.each do |e|
+    # puts e.elements["event"]
+    event = e.elements["event"].text
+    # This gets rid of <lj-cut> garbage in a semi-intelligent way;
+    # If the cut had a caption associated, we pull that out and
+    # format it nicely, otherwise use an <hr />
+    event.gsub!(/<lj-cut[[:blank:]]text="(?<cuttext>.*)">/, '<p>(<cuttext>)</p>')
+    event.gsub!(/<lj-cut>/, "<hr />")
+    event.gsub!(/<\/lj-cut>/, "\n")
 
-		# Do some naive HTML-to-Markdown conversion
-		entrytexts[i].text.gsub!(/<\/?[pP]>/, "\n")
-		entrytexts[i].text.gsub!(/<\/[pP]>/, "")
-		entrytexts[i].text.gsub!(/<\/?(strong)*(STRONG)*(b)*(B)*>/, '**')
-		entrytexts[i].text.gsub!(/<\/?(em)*(EM)*(i)*(I)*>/, '**')
-		entrytexts[i].text.gsub!(/<[aA] .*"(?<url>.*)">(?<linktext>.*)<\/[aA]>/, '[\k<linktext>](\k<url>)')
+    # <lj-user> instances are converted to html links.
+    event.gsub!(/<lj user="(?<username>.*)">/, '<a href="https://\k<username>.livejournal.com/">\k<username></a>')
 
-		# <lj-user> instances are converted to html links.
-		entrytexts[i].text.gsub!(/<lj user="(?<username>.*)">/, '<a href="http://\k<username>.livejournal.com/">\k<username></a>')
+    # Use pandoc for less naive HTML-to-Markdown conversion
+    File.write('/tmp/event', event)
+    event = `cat /tmp/event | pandoc -f html -t markdown --wrap=none`
 
-		if subjects[i].text.to_s.empty?
-				puts create_dayone_entry('', dates[i].text, entrytexts[i].text)
-			else
-				# When there's a subject, give it a top-level markdown header tag before passing it to Day One
-				puts create_dayone_entry('# ' + subjects[i].text, dates[i].text, entrytexts[i].text)
-			end
-			puts "Entry from " + dates[i].text + " added."
-		end
+    subject = e.elements["subject"].text
+    eventdate = e.elements["eventtime"].text
+    if subject.nil?
+      puts create_dayone_entry('', eventdate, event)
+    else
+      # When there's a subject, give it a top-level markdown header tag before passing it to Day One
+      puts create_dayone_entry('# ' + subject, eventdate, event)
+    end
+    puts "Entry from " + eventdate + " added."
+  end
 end
