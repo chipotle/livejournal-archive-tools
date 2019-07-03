@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 require "rexml/document"
 
@@ -15,7 +15,6 @@ def create_dayone_entry(subject, date, text)
   f.puts text
   f.close
   return `cat /tmp/entry | #{dayone_cmd} #{dayone_cmd_options} --date="#{date}" new`
-  File.delete 'tmp/entry'
 end
 
 # It's very likely that we're going to be iterating over multiple files, so
@@ -31,28 +30,27 @@ ARGV.each do |arg|
 # that's an arbitrary choice; all three arrays should be the same length
 
   entries.each do |e|
-    # puts e.elements["event"]
     event = e.elements["event"].text
     # This gets rid of <lj-cut> garbage in a semi-intelligent way;
     # If the cut had a caption associated, we pull that out and
     # format it nicely, otherwise use an <hr />
-    event.gsub!(/<lj-cut[[:blank:]]text="(?<cuttext>.*)">/, '<p>(<cuttext>)</p>')
+    event.gsub!(/<lj-cut\s+text="(.*?)">/, '<p>(\1)</p>')
     event.gsub!(/<lj-cut>/, "<hr />")
     event.gsub!(/<\/lj-cut>/, "\n")
 
-    # <lj-user> instances are converted to html links.
-    event.gsub!(/<lj user="(?<username>.*)">/, '<a href="https://\k<username>.livejournal.com/">\k<username></a>')
+    # <lj-user> instances are converted to HTML links
+    event.gsub!(/<lj user="(.*?)"(\s*\/)*>/, '<a href="https://\1.livejournal.com"><b>\1</b></a>')
 
     # Use pandoc for less naive HTML-to-Markdown conversion
     File.write('/tmp/event', event)
-    event = `cat /tmp/event | pandoc -f html -t markdown --wrap=none`
+    event = `cat /tmp/event | pandoc -f html -t gfm --wrap=none`
 
     subject = e.elements["subject"].text
     eventdate = e.elements["eventtime"].text
     if subject.nil?
       puts create_dayone_entry('', eventdate, event)
     else
-      # When there's a subject, give it a top-level markdown header tag before passing it to Day One
+      # Give subjects <h1> headings
       puts create_dayone_entry('# ' + subject, eventdate, event)
     end
     puts "Entry from " + eventdate + " added."
