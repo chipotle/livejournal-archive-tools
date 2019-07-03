@@ -1,11 +1,17 @@
-#!/usr/bin/ruby
+#!/usr/bin/env/ruby
 require 'cgi'
+require 'yaml'
+require 'fileutils'
 
-# Put your username and password here
+# Put your username and password in the lj.yaml file, like so.
+# "last_year" defaults to the current
+#
+# username: chipotle
+# password: password
+# first_year: 2001
+# last_year: 2015
 
-lj_username = 'USERNAME' # replace USERNAME with your actual username
-lj_password = 'PASSWORD' # replace PASSWORD with your actual password
-firstyear = 2013 # Change this to the year your LJ starts
+lj = YAML.load_file('lj.yml')
 
 # You shouldn't have to change these, but here they are just in case!
 lj_login_url = 'http://www.livejournal.com/interface/flat' # LJ API url
@@ -13,7 +19,7 @@ lj_archive_url = 'http://www.livejournal.com/export_do.bml' # XML download URL
 
 # Build login string, then log into LJ and save the cookie.
 
-loginstring = 'mode=sessiongenerate&user=' + CGI.escape(lj_username) + '&password=' + CGI.escape(lj_password)
+loginstring = 'mode=sessiongenerate&user=' + CGI.escape(lj['username']) + '&password=' + CGI.escape(lj['password'])
 
 lj_session_cookie = %x(curl --data #{loginstring.dump} #{lj_login_url.dump}).lines
 
@@ -30,15 +36,31 @@ unless File.exists?('cookies.txt')
 	abort('Error: Could not log in to LiveJournal')
 end
 
-# Iterate over years, starting with firstyear and running up to the current year
-(firstyear..Time.now.year).each do |current_year|
-	# In each month of each year, send POST data that will fetch the LJ XML for that month.
-		(1..12).each do |current_month|
-			poststring = 'what=journal&year=' + current_year.to_s + '&month=' + current_month.to_s + '&format=xml&header=on&encid=2&field_eventtime=on&field_subject=on&field_event=on'
-			open(current_year.to_s + '-' + current_month.to_s + '.xml', 'w') do |f| # Open a file named e.g. "2006-4.xml"
-				f.puts %x(curl -L --cookie cookies.txt --data #{poststring.dump}  #{lj_archive_url.dump}).encode("UTF-8") # run CURL with the current month's POST info and dump the result into a file
-				end
-				puts "Waiting for 1 second so Livejournal doesn't have a fit..."
-				sleep(1)
-			end
+FileUtils.mkdir_p 'lj-xml'
+
+if lj['last_year']
+	last_month = 12
+	last_year = lj['last_year']
+else
+	last_month = Time.now.month
+	last_year = Time.now.year
 end
+
+(lj['first_year']..last_year).each do |current_year|
+	months = (current_year == last_year) ? 1..last_month : 1..12
+	months.each do |current_month|
+		poststring = 'what=journal&year=' + current_year.to_s + '&month=' + current_month.to_s + '&format=xml&header=on&encid=2&field_eventtime=on&field_subject=on&field_event=on'
+		filename = "lj-xml/%04d-%02d.xml" % [current_year, current_month]
+		xml = %x(curl -L --cookie cookies.txt --data #{poststring.dump}  #{lj_archive_url.dump}).encode("UTF-8")
+		if xml !~ /<livejournal>\n<\/livejournal>/
+			File.write(filename, xml)
+			puts "* #{filename} written"
+		else
+			puts "- #{filename} empty, skipped"
+		end
+
+		sleep(1)
+	end
+end
+
+File.delete 'cookies.txt'
