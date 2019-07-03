@@ -1,26 +1,30 @@
 # Hello!
 
-If you're still using [Livejournal][lj], odds are you've got a _lot_ of stuff there. LJ does let you download your archives, but their tool only lets you do it one month at a time.
+If you're still using [LiveJournal](https://www.livejournal.com), odds are you've got a _lot_ of stuff there. LJ does let you download your archives, but their tool only lets you do it one month at a time.
 
 My personal archives on LJ go back to 2002, and the idea of individually downloading well in excess of a hundred files by hand seems absurd. So here's a way to get your whole LJ archive without doing that.
 
-First of all, you need to be able to run ruby scripts. If you're on a Mac or Linux machine, you already can. If you're running Windows, it takes a little bit of doing, but you can still do it!
+First of all, you need to be able to run Ruby scripts. If you're on a Mac or Linux machine, you already can. If you're running Windows, it takes a little bit of doing, but you can still do it!
 
 ## How to use getljxml.rb on a Mac
 
+(I'm going to assume some familiarity with the command line.)
+
 First, download the file. Then put it in the directory where you want your LJ archives to be downloaded.
 
-Then open up `getljxml.rb` in a text editor. DO NOT PANIC at this point. Replace USERNAME with your username, and PASSWORD with your password. (This script does not steal your password. It sends it to Livejournal the same way your browser does.) Also, change 2002 to the first year your own journal started.
+Then, using a text editor, create a file named `lj.yml` in the same directory. DO NOT PANIC at this point. Make a file that looks like this:
 
-**NOTE:** Make sure that your username and password are surrounded with single straight quotes, like this one: '. If the text editor you're using smartens them, the script will not work. 
+```yaml
+username: chipotle
+password: "my-crazy-password"
+first_year: 2001
+```
 
-You're almost done.
+Put in your own username and password, of course. This script sends them to the LiveJournal server just like your browser, and doesn't send them anywhere else, so your password is not being stolen. (You'll probably need quote marks around the password if it has any remotely unusual characters in it.) Change `first_year` to the first year you want to import. If you don't want to export all of your journal, you can also add a `last_year` line here.
 
-Now, open up a Terminal window. Don't worry, you can do this. I believe in you.
+**NOTE:** Make sure that your username and password are surrounded with single straight quotes, not curly quotes!
 
-If you're on a Mac, type `cd `, put a space after it, and then drag the folder containing `getljxml.rb` into the terminal window. Then hit `return`.
-
-**You're almost done.**
+Open up a terminal window and change to the directory that `getljxml.rb` is in. (If you're on a Mac, you can type `cd `, put a space after it, and then drag the folder containing `getljxml.rb` into the terminal window. Then hit `return`.)
 
 Now, type two things.
 
@@ -28,7 +32,7 @@ Now, type two things.
 
 > `./getljxml.rb` (Hit return again!)
 
-Now you should see a bunch of stuff happening. When stuff stops happening, look at your folder again. You should have a bunch of .xml files in there, each one corresponding to a month of entries from your Livejournal. Huzzah!
+Now you should see a bunch of stuff happening. When stuff stops happening, look at your folder again. You should now have a new `lj-xml` folder. In that folder, you'll have a bunch of .xml files, each one corresponding to a month of entries from your Livejournal. Months with no entries won't have files for them.
 
 ## How to use getljxml on a Linux machine
 
@@ -39,7 +43,8 @@ It's the same as doing it on a Mac!
 This takes a little work. You'll need to install a couple of things that don't come with Windows by default. 
 
 ### Installing Ruby on Windows
-First, you'll need to install Ruby. 
+
+First, you'll need to install Ruby.
 
 1. Go to https://rubyinstaller.org/downloads/
 2. Click on one of the Ruby installers to download and run. 
@@ -47,21 +52,31 @@ First, you'll need to install Ruby.
 3. Run the installer. 
 
 ### Installing cURL on Windows
+
 Next you'll need to install cURL, which is basically a web browser that your script can use from the command line. Unfortunately, this can be a bit fiddly. The simplest set of instructions that I've found are available here: https://help.zendesk.com/hc/en-us/articles/229136847-Installing-and-using-cURL#install
 
 If you follow them step by step, you should get it working. 
 
 ### Running the getljxml script
+
 Okay, now that you've done that, you're almost home free. 
-First, download the getljxml.rb file:
+First, download the `getljxml.rb` file:
 
 1. From https://github.com/papatangosierra/livejournal-archive-tools, click the **Clone or download** button. 
 2. Click **Download ZIP**
 3. Extract the contents of the zip file and copy the getljxml.rb script to a folder where you want your files to be backed up. 
 
-Then, edit the getljxml.rb file with a text editor like Notepad. Replace USERNAME with your username, and PASSWORD with your password. (This script does not steal your password. It sends it to Livejournal the same way your browser does.) Also, change 2002 to the first year your own journal started. (If you don't know what year your journal started, go to your profile page and look for the date your account was created near the top.) 
+Then, using a text editor, create a file named `lj.yml` in the same directory. DO NOT PANIC at this point. Make a file that looks like this:
 
-**NOTE:** Make sure that your username and password are surrounded with single straight quotes, like this one: '. If the text editor you're using smartens them, the script will not work. 
+```yaml
+username: chipotle
+password: "my-crazy-password"
+first_year: 2001
+```
+
+Put in your own username and password, of course. This script sends them to the LiveJournal server just like your browser, and doesn't send them anywhere else, so your password is not being stolen. (You'll probably need quote marks around the password if it has any remotely unusual characters in it.) Change `first_year` to the first year you want to import. If you don't want to export all of your journal, you can also add a `last_year` line here.
+
+**NOTE:** Make sure that your username and password are surrounded with single straight quotes, not curly quotes!
 
 Now you're ready to run the script. 
 
@@ -70,31 +85,49 @@ Now you're ready to run the script.
 	To find the path, browse to the folder in Windows Explorer. Click in an empty part of the address bar of the window to show  and select the path. Press Ctrl+C to copy the path. Right-click in the command-line window and select paste to paste the path you have copied. 
 3. Type `ruby getljxml.rb` to run the script. 
 
-Now you should see a bunch of stuff happening. When stuff stops happening, look at your folder again. You should have a bunch of .xml files in there, each one corresponding to a month of entries from your Livejournal. Huzzah!
+Now you should see a bunch of stuff happening. When stuff stops happening, look at your folder again. You should now have a new `lj-xml` folder. In that folder, you'll have a bunch of .xml files, each one corresponding to a month of entries from your Livejournal. Months with no entries won't have files for them.
 
 ## How to use lj2dayone.rb
 
-Put the `lj2dayone.rb` file in the same folder as all your LJ XML files. If you're running Day One 2 or 3, you can use the script as-is, so skip to the terminal commands below. However, if you're using Day One Classic, you'll need to edit the `lj2dayone.rb` script slightly. 
+This has a few more complicated requirements:
 
-Open `lj2dayone.rb` in a text editor. Find the lines that look like this:
+* You must install [Pandoc](https://pandoc.org).
+* You must have Day One version 2 or higher.
+* You must have installed the command line tool ("Install Command Line Tools..." in Day One's menu).
 
-	DAYONE2 = 'YES'
-	# DAYONE2 = 'NO'
+Got it? Okay!
 
-And change them to look like this:
+1. Create a new journal called "LiveJournal" in Day One.
 
-	# DAYONE2 = 'YES'
-	DAYONE2 = 'NO'
+2. Put the `lj2dayone.rb` file in the same folder as all your LJ XML files.
 
-This makes sure the script adds your entries in the right place.
+3. Open up a terminal window (I know, I know) and type
 
-Next open up a terminal window (I know, I know) and type
+	`chmod u+x lj2dayone.rb` (Hit return.)
 
-> `chmod u+x lj2dayone.rb` (Hit return.)
-
-> `./lj2dayone.rb *.xml` (And hit return again)
+	`./lj2dayone.rb *.xml` (And hit return again)
 
 Depending on how many LJ entries you have to import, this could take a few minutes. Once's it's finished, you can open up Day One and gaze upon your beautiful new archive.
 
+----
 
-[lj]: http://www.livejournal.com
+Written by [@papatangosierra](https://github.com/papatangosierra). This version was modified by [@chipotle](https://github.com/chipotle) (Watts Martin) to make the following changes:
+
+**getljxml.rb:**
+
+* Move configuration to YAML file
+* Add `last_year` configuration
+* Only write month files that actually have entries
+
+**lj2dayone.rb:**
+
+* Drop "classic" Day One support
+* Use Pandoc for real Markdown processing
+* Refactor XML handling
+* Write to "LiveJournal" journal
+
+**General:**
+
+* More idiomatic Ruby
+
+The original files do not specify a license.
