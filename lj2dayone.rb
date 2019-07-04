@@ -4,13 +4,13 @@ require "rexml/document"
 
 # Create a DayOne entry in a journal named "LiveJournal"
 def create_dayone_entry(subject, date, text)
-  dayone_cmd_options = '--journal=LiveJournal'
-
+  journal_name = 'LiveJournal'
+  
   f = File.new("/tmp/entry", "w+")
   f.puts subject
   f.puts text
   f.close
-  return `cat /tmp/entry | dayone2 #{dayone_cmd_options} --date="#{date}" new`
+  return `cat /tmp/entry | dayone2 --journal=#{journal_name} --date="#{date}" new`
 end
 
 # Iterate over all files on the command line
