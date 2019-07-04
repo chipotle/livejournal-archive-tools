@@ -1,36 +1,36 @@
 #!/usr/bin/env ruby
 
-require "rexml/document"
+require 'rexml/document'
 
 # Create a DayOne entry in a journal named "LiveJournal"
 def create_dayone_entry(subject, date, text)
   journal_name = 'LiveJournal'
-  
-  f = File.new("/tmp/entry", "w+")
+
+  f = File.new('/tmp/entry', 'w+')
   f.puts subject
   f.puts text
   f.close
-  return `cat /tmp/entry | dayone2 --journal=#{journal_name} --date="#{date}" new`
+  `cat /tmp/entry | dayone2 --journal=#{journal_name} --date="#{date}" new`
 end
 
 # Iterate over all files on the command line
 ARGV.each do |arg|
-
   # Read file and load <entry> objects into an array
   ljdata = REXML::Document.new(File.new(arg))
-  entries = REXML::XPath.each(ljdata, "//entry").to_a
+  entries = REXML::XPath.each(ljdata, '//entry').to_a
 
   entries.each do |e|
-    event = e.elements["event"].text
-    subject = e.elements["subject"].text
-    eventdate = e.elements["eventtime"].text
-    
+    event = e.elements['event'].text
+    subject = e.elements['subject'].text
+    eventdate = e.elements['eventtime'].text
+
     # convert <lj-cut> instances into <hr> tags
-    event.gsub!(/<lj-cut.*?">/, '<hr />')
-    event.gsub!(/<\/lj-cut>/, "\n")
+    event.gsub!(/<lj-cut.*?>/, '<hr />')
+    event.gsub!(%r{</lj-cut>}, "\n")
 
     # convert <lj-user> tags to bold links
-    event.gsub!(/<lj user="(.*?)"(\s*\/)*>/, '<a href="https://\1.livejournal.com"><b>\1</b></a>')
+    event.gsub!(%r{<lj user="(.*?)"(\s*/)*>},
+      '<a href="https://\1.livejournal.com"><b>\1</b></a>')
 
     # Use Pandoc for HTML to Markdown conversion
     File.write('/tmp/event', event)
@@ -42,7 +42,6 @@ ARGV.each do |arg|
     else
       puts create_dayone_entry('# ' + subject, eventdate, event)
     end
-    puts "Entry from " + eventdate + " added."
+    puts "Entry from #{eventdate} added."
   end
-
 end

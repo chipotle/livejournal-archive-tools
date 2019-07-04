@@ -19,48 +19,51 @@ lj_archive_url = 'http://www.livejournal.com/export_do.bml' # XML download URL
 
 # Build login string, then log into LJ and save the cookie.
 
-loginstring = 'mode=sessiongenerate&user=' + CGI.escape(lj['username']) + '&password=' + CGI.escape(lj['password'])
+loginstring = 'mode=sessiongenerate&user=' + CGI.escape(lj['username']) +
+  '&password=' + CGI.escape(lj['password'])
 
-lj_session_cookie = %x(curl --data #{loginstring.dump} #{lj_login_url.dump}).lines
+lj_session_cookie = `curl --data #{loginstring.dump} #{lj_login_url.dump}`.lines
 
-if lj_session_cookie[0] =~ /ljsession/ # if we logged in successfully, write out the cookie (We can detect a successful login if the first line of the response to our query includes the "ljsession" string
-	open('cookies.txt', 'w') do |f|
-		f.puts("#HttpOnly_.livejournal.com\tTRUE\t/\tFALSE\t0\tljsession\t" + lj_session_cookie[1])
-	end
+# if we logged in successfully, write out the cookie
+if lj_session_cookie[0] =~ /ljsession/
+  open('cookies.txt', 'w') do |f|
+    f.puts("#HttpOnly_.livejournal.com\tTRUE\t/\tFALSE\t0\tljsession\t" +
+      lj_session_cookie[1])
+  end
 else
-	abort('ERROR: Could not log in to LiveJournal.')
+  abort('ERROR: Could not log in to LiveJournal.')
 end
 
 # Make sure we actually logged in
-unless File.exists?('cookies.txt')
-	abort('Error: Could not log in to LiveJournal')
-end
+abort('Error: Could not log in to LiveJournal') unless File.exist? 'cookies.txt'
 
 FileUtils.mkdir_p 'lj-xml'
 
 if lj['last_year']
-	last_month = 12
-	last_year = lj['last_year']
+  last_month = 12
+  last_year = lj['last_year']
 else
-	last_month = Time.now.month
-	last_year = Time.now.year
+  last_month = Time.now.month
+  last_year = Time.now.year
 end
 
 (lj['first_year']..last_year).each do |current_year|
-	months = (current_year == last_year) ? 1..last_month : 1..12
-	months.each do |current_month|
-		poststring = 'what=journal&year=' + current_year.to_s + '&month=' + current_month.to_s + '&format=xml&header=on&encid=2&field_eventtime=on&field_subject=on&field_event=on'
-		filename = "lj-xml/%04d-%02d.xml" % [current_year, current_month]
-		xml = %x(curl -L --cookie cookies.txt --data #{poststring.dump}  #{lj_archive_url.dump}).encode("UTF-8")
-		if xml !~ /<livejournal>\n<\/livejournal>/
-			File.write(filename, xml)
-			puts "* #{filename} written"
-		else
-			puts "- #{filename} empty, skipped"
-		end
+  months = (current_year == last_year) ? 1..last_month : 1..12
+  months.each do |current_month|
+    poststring = 'what=journal&year=' + current_year.to_s + '&month=' +
+      current_month.to_s +
+      '&format=xml&header=on&encid=2&field_eventtime=on&field_subject=on&field_event=on'
+    filename = format('lj-xml/%04d-%02d.xml', current_year, current_month)
+    xml = `curl -L --cookie cookies.txt --data #{poststring.dump} #{lj_archive_url.dump}`.encode('UTF-8')
+    if xml !~ %r{<livejournal>\n</livejournal>}
+      File.write(filename, xml)
+      puts "* #{filename} written"
+    else
+      puts "- #{filename} empty, skipped"
+    end
 
-		sleep(1)
-	end
+    sleep(1)
+  end
 end
 
 File.delete 'cookies.txt'
