@@ -1,0 +1,11 @@
+# These must be set to your real username and password, and this file
+# must be name "lj.yml"!
+
+username: ljuser
+password: "ljpassword"
+
+# These specify the years of journals you want to download. If last_year
+# is not set (or left commented out), it will default to the current year.
+
+first_year: 2013
+# last_year: 2014

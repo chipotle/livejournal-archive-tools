@@ -3,21 +3,16 @@ require 'cgi'
 require 'yaml'
 require 'fileutils'
 
-# Put your username and password in the lj.yaml file, like so.
-# "last_year" defaults to the current
-#
-# username: chipotle
-# password: password
-# first_year: 2001
-# last_year: 2015
+# See the docs for YAML configuration info
 
 lj = YAML.load_file('lj.yml')
 
 # You shouldn't have to change these, but here they are just in case!
-lj_login_url = 'http://www.livejournal.com/interface/flat' # LJ API url
-lj_archive_url = 'http://www.livejournal.com/export_do.bml' # XML download URL
 
-# Build login string, then log into LJ and save the cookie.
+lj_login_url = 'http://www.livejournal.com/interface/flat'
+lj_archive_url = 'http://www.livejournal.com/export_do.bml'
+
+# Build login string, then log into LJ and save the cookie
 
 loginstring = 'mode=sessiongenerate&user=' + CGI.escape(lj['username']) +
   '&password=' + CGI.escape(lj['password'])
