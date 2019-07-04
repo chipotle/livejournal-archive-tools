@@ -25,9 +25,8 @@ ARGV.each do |arg|
     subject = e.elements["subject"].text
     eventdate = e.elements["eventtime"].text
     
-    # convert <lj-cut> instances into plain text or <hr> tags
-    event.gsub!(/<lj-cut\s+text="(.*?)">/, '<p>(\1)</p>')
-    event.gsub!(/<lj-cut>/, "<hr />")
+    # convert <lj-cut> instances into <hr> tags
+    event.gsub!(/<lj-cut.*?">/, '<hr />')
     event.gsub!(/<\/lj-cut>/, "\n")
 
     # convert <lj-user> tags to bold links
