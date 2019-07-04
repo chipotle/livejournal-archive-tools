@@ -20,21 +20,21 @@ Written by [@papatangosierra](https://github.com/papatangosierra). This version 
 * Drop "classic" Day One support
 * Use Pandoc for real Markdown processing
 * Refactor XML handling
-* Write to "LiveJournal" journal
+* Fix regex bugs
 
 **General:**
 
 * More idiomatic Ruby
 
-The original files do not specify a license, so I'm stumped for what these should be licensed as, although I'd personally probably pick GPL. -- wm
+The original files do not specify a license.
 
 ----
 
 ## getljxml.rb: download LiveJournal XML
 
-Download `getljxml.rb` and put it in a directory somewhere. Your LiveJournal will be downloaded to a folder in this directory named `lj-xml`.
+Download `getljxml.rb` and `lj.sample.yml` and put them together in a directory. Your LiveJournal will be downloaded to a folder in this directory named `lj-xml`.
 
-Using a text editor, create a file named `lj.yml` in the same directory. This is a configuration file that should look like this:
+Rename the `lj.sample.yml` to `lj.yml` and open it in a text editor. This is a configuration file that specifies your username, password, and the years you want to download.
 
 	username: chipotle
 	password: "my-crazy-password"
