@@ -2,10 +2,11 @@
 
 require 'rexml/document'
 
-# Create a DayOne entry in a journal named "LiveJournal"
+# Create a Day One entry
 def create_dayone_entry(subject, date, text)
   journal_name = 'LiveJournal'
 
+  subject = if subject.nil? then '' else '# ' + subject end
   f = File.new('/tmp/entry', 'w+')
   f.puts subject
   f.puts text
@@ -13,10 +14,22 @@ def create_dayone_entry(subject, date, text)
   `cat /tmp/entry | dayone2 --journal=#{journal_name} --date="#{date}" new`
 end
 
-# Iterate over all files on the command line
-ARGV.each do |arg|
-  # Read file and load <entry> objects into an array
-  ljdata = REXML::Document.new(File.new(arg))
+# Check if a file exists on a path
+# taken from https://stackoverflow.com/questions/2108727/which-in-ruby-checking-if-program-exists-in-path-from-ruby
+def which(cmd)
+  exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
+  ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+    exts.each do |ext|
+      exe = File.join(path, "#{cmd}#{ext}")
+      return exe if File.executable?(exe) && !File.directory?(exe)
+    end
+  end
+  return nil
+end
+
+# Process an individual monthly XML file
+def process_file(xmlfile)
+  ljdata = REXML::Document.new(File.new(xmlfile))
   entries = REXML::XPath.each(ljdata, '//entry').to_a
 
   entries.each do |e|
@@ -36,12 +49,16 @@ ARGV.each do |arg|
     File.write('/tmp/event', event)
     event = `cat /tmp/event | pandoc -f html -t gfm --wrap=none`
 
-    # Create entry, making subject an <h1> if provided
-    if subject.nil?
-      puts create_dayone_entry('', eventdate, event)
-    else
-      puts create_dayone_entry('# ' + subject, eventdate, event)
-    end
+    puts create_dayone_entry(subject, eventdate, event)
     puts "Entry from #{eventdate} added."
   end
+end
+
+# --- start execution here ---
+
+abort("Pandoc not found! Install from https://pandoc.org") unless
+  which('pandoc')
+
+ARGV.each do |arg|
+  process_file(arg)
 end
